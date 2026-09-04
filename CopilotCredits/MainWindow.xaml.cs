@@ -126,60 +126,51 @@ public partial class MainWindow : Window
 
 	private void ShowWindowsNotification(string title, string message)
 	{
+#if WINDOWS
 		try
 		{
-			// Use a simple PowerShell command to show notification
-			// Write it to a temp file to avoid escaping issues
-			string tempScript = Path.Combine(Path.GetTempPath(), $"toast_{Guid.NewGuid()}.ps1");
+			// Use native Windows.UI.Notifications API on Windows
+			dynamic? notificationManager = Type.GetType("Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications");
+			dynamic? xmlDocType = Type.GetType("Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument");
+			dynamic? toastNotificationType = Type.GetType("Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications");
 			
-			string script = $@"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-[Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
-
-$APP_ID = 'CopilotCredits'
-$template = @""
-<toast>
-    <visual>
-        <binding template=""ToastText02"">
-            <text id=""1"">{System.Net.WebUtility.HtmlEncode(title)}</text>
-            <text id=""2"">{System.Net.WebUtility.HtmlEncode(message)}</text>
-        </binding>
-    </visual>
-</toast>
-""@
-
-$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-$xml.LoadXml($template)
-$toast = New-Object Windows.UI.Notifications.ToastNotification $xml
-[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($APP_ID).Show($toast)
-";
-			
-			File.WriteAllText(tempScript, script);
-			
-			var process = new ProcessStartInfo
+			if (notificationManager == null || xmlDocType == null || toastNotificationType == null)
 			{
-				FileName = "powershell.exe",
-				Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{tempScript}\"",
-				UseShellExecute = false,
-				RedirectStandardOutput = true,
-				RedirectStandardError = true,
-				CreateNoWindow = true
-			};
-			
-			var proc = Process.Start(process);
-			if (proc != null)
-			{
-				proc.WaitForExit(5000);
-				proc.Dispose();
+				Debug.WriteLine("Could not load Windows notification types");
+				return;
 			}
 			
-			// Clean up temp file
-			try { File.Delete(tempScript); } catch { }
+			// Build toast XML with HTML-encoded text
+			string escapedTitle = System.Net.WebUtility.HtmlEncode(title);
+			string escapedMessage = System.Net.WebUtility.HtmlEncode(message);
+			
+			string xmlContent = $@"<toast>
+    <visual>
+        <binding template=""ToastText02"">
+            <text id=""1"">{escapedTitle}</text>
+            <text id=""2"">{escapedMessage}</text>
+        </binding>
+    </visual>
+</toast>";
+			
+			// Create XML document
+			dynamic xmlDoc = Activator.CreateInstance(xmlDocType);
+			xmlDoc.LoadXml(xmlContent);
+			
+			// Create toast notification
+			dynamic toast = Activator.CreateInstance(toastNotificationType, xmlDoc);
+			
+			// Show notification
+			dynamic notifier = notificationManager.CreateToastNotifier("CopilotCredits");
+			notifier.Show(toast);
+			
+			Debug.WriteLine("Windows notification displayed successfully");
 		}
 		catch (Exception ex)
 		{
 			Debug.WriteLine($"ShowWindowsNotification exception: {ex.Message}");
 		}
+#endif
 	}
 
 	private void ShowMacOSNotification(string title, string message)
