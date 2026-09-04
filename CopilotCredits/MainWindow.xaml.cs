@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using System.Timers;
 using System.Diagnostics;
 
@@ -14,6 +15,9 @@ public partial class MainWindow : Window
 	internal int minutesToWaitForRefresh = 1;
 	internal bool notifyOnPercentageThreshold = true;
 	internal int percentageThreshold = 5;
+	
+	// Carbon footprint calculation: ~5mg CO2 per credit (based on research)
+	private const double CO2_PER_CREDIT_MG = 5.0;
 
 	public MainWindow()
 	{
@@ -47,53 +51,87 @@ public partial class MainWindow : Window
 		try
 		{
 			var credits = await creditReader.ReadUsedCreditsAsync();
-			UsedCreditsText.Text = credits.Used.ToString("N0");
-			TotalCreditsText.Text = credits.Total.ToString("N0");
 			
-			// Calculate percentage
-			double percentageUsed = credits.Total > 0 ? (double)credits.Used / credits.Total * 100 : 0;
-			double percentageRemaining = 100 - percentageUsed;
-			
-			// Calculate money spent (1 credit = 0.01 euro)
-			double moneySpent = credits.Used * 0.01;
-			
-			UsageProgressBar.Value = percentageUsed;
-			PercentageText.Text = $"{percentageUsed:F1}%";
-			RemainingText.Text = $"{credits.Total - credits.Used:N0} remaining";
-			MoneySpentText.Text = $"€{moneySpent:F2}";
-			
-			// Change color based on usage
-			if (percentageUsed > 80)
+			// Marshal UI updates back to the UI thread
+			await Dispatcher.UIThread.InvokeAsync(() =>
 			{
-				UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Red);
-			}
-			else if (percentageUsed > 50)
-			{
-				UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Orange);
-			}
-			else
-			{
-				UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(new Avalonia.Media.Color(255, 212, 86, 61));
-			}
-			
-			// Check if we should notify about threshold
-			if (notifyOnPercentageThreshold && percentageUsed >= percentageThreshold)
-			{
-				if (lastNotifiedPercentage < 0 || percentageUsed - lastNotifiedPercentage >= percentageThreshold)
+				UsedCreditsText.Text = credits.Used.ToString("N0");
+				TotalCreditsText.Text = credits.Total.ToString("N0");
+				
+				// Calculate percentage
+				double percentageUsed = credits.Total > 0 ? (double)credits.Used / credits.Total * 100 : 0;
+				double percentageRemaining = 100 - percentageUsed;
+				
+				// Calculate money spent (1 credit = 0.01 euro)
+				double moneySpent = credits.Used * 0.01;
+				
+				// Calculate carbon footprint (CO2 in grams)
+				double co2Grams = (credits.Used * CO2_PER_CREDIT_MG) / 1000.0;
+				
+				UsageProgressBar.Value = percentageUsed;
+				PercentageText.Text = $"{percentageUsed:F1}%";
+				RemainingText.Text = $"{credits.Total - credits.Used:N0} remaining";
+				MoneySpentText.Text = $"€{moneySpent:F2}";
+				
+				// Display carbon footprint
+				if (this.FindControl<TextBlock>("CarbonText") is TextBlock carbonText)
 				{
-					ShowThresholdNotification(percentageUsed, credits);
-					lastNotifiedPercentage = percentageUsed;
+					if (co2Grams < 1)
+					{
+						carbonText.Text = $"{co2Grams * 1000:F0}mg";
+					}
+					else if (co2Grams < 1000)
+					{
+						carbonText.Text = $"{co2Grams:F2}g";
+					}
+					else
+					{
+						carbonText.Text = $"{co2Grams / 1000:F3}kg";
+					}
 				}
-			}
+				
+				// Change color based on usage
+				if (percentageUsed > 85)
+				{
+					UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Red);
+				}
+				else if (percentageUsed >= 50)
+				{
+					UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Orange);
+				}
+				else
+				{
+					UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Green);
+				}
+				
+				// Check if we should notify about threshold
+				if (notifyOnPercentageThreshold && percentageUsed >= percentageThreshold)
+				{
+					if (lastNotifiedPercentage < 0 || percentageUsed - lastNotifiedPercentage >= percentageThreshold)
+					{
+						ShowThresholdNotification(percentageUsed, credits);
+						lastNotifiedPercentage = percentageUsed;
+					}
+				}
+			});
 		}
 		catch (Exception)
 		{
-			UsedCreditsText.Text = "--";
-			TotalCreditsText.Text = "--";
-			PercentageText.Text = "--";
-			RemainingText.Text = "-- remaining";
-			MoneySpentText.Text = "€0.00";
-			UsageProgressBar.Value = 0;
+			// Marshal error UI updates back to the UI thread
+			await Dispatcher.UIThread.InvokeAsync(() =>
+			{
+				UsedCreditsText.Text = "--";
+				TotalCreditsText.Text = "--";
+				PercentageText.Text = "--";
+				RemainingText.Text = "-- remaining";
+				MoneySpentText.Text = "€0.00";
+				UsageProgressBar.Value = 0;
+				
+				if (this.FindControl<TextBlock>("CarbonText") is TextBlock carbonText)
+				{
+					carbonText.Text = "--";
+				}
+			});
 		}
 		finally
 		{
