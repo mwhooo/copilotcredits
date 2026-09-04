@@ -129,14 +129,17 @@ public partial class MainWindow : Window
 		try
 		{
 			// Use PowerShell to show Windows notification
-			string escapedTitle = title.Replace("\"", "\\\"").Replace("'", "''");
-			string escapedMessage = message.Replace("\"", "\\\"").Replace("'", "''");
+			// Build XML with proper escaping
+			string xmlContent = $"<toast><visual><binding template=\"ToastText02\"><text id=\"1\">{System.Xml.XmlConvert.EncodeName(title)}</text><text id=\"2\">{System.Xml.XmlConvert.EncodeName(message)}</text></binding></visual></toast>";
 			
-			string xmlContent = $"<toast><visual><binding template='ToastText02'><text id='1'>{escapedTitle}</text><text id='2'>{escapedMessage}</text></binding></visual></toast>";
+			// Use Base64 encoding to avoid quote escaping issues
+			string base64Xml = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(xmlContent));
+			
 			string psCommand = $"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications] > $null; " +
 				$"[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument] > $null; " +
 				$"$xml = New-Object Windows.Data.Xml.Dom.XmlDocument; " +
-				$"$xml.LoadXml('{xmlContent}'); " +
+				$"$xmlString = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{base64Xml}')); " +
+				$"$xml.LoadXml($xmlString); " +
 				$"$toast = New-Object Windows.UI.Notifications.ToastNotification $xml; " +
 				$"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('CopilotCredits').Show($toast)";
 			
