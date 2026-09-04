@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using System.Timers;
+using System.Diagnostics;
 
 namespace CopilotCredits;
 
@@ -9,7 +10,10 @@ public partial class MainWindow : Window
 	private readonly CopilotCreditReader creditReader = new();
 	private readonly System.Timers.Timer refreshTimer;
 	private bool isRefreshing;
+	private double lastNotifiedPercentage = -1;
 	internal int minutesToWaitForRefresh = 1;
+	internal bool notifyOnPercentageThreshold = true;
+	internal int percentageThreshold = 5;
 
 	public MainWindow()
 	{
@@ -67,6 +71,16 @@ public partial class MainWindow : Window
 			{
 				UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(new Avalonia.Media.Color(255, 212, 86, 61));
 			}
+			
+			// Check if we should notify about threshold
+			if (notifyOnPercentageThreshold && percentageUsed >= percentageThreshold)
+			{
+				if (lastNotifiedPercentage < 0 || percentageUsed - lastNotifiedPercentage >= percentageThreshold)
+				{
+					ShowThresholdNotification(percentageUsed, credits);
+					lastNotifiedPercentage = percentageUsed;
+				}
+			}
 		}
 		catch (Exception)
 		{
@@ -79,6 +93,114 @@ public partial class MainWindow : Window
 		finally
 		{
 			isRefreshing = false;
+		}
+	}
+
+	private void ShowThresholdNotification(double percentageUsed, CreditInfo credits)
+	{
+		try
+		{
+			string title = "Copilot Credits Alert";
+			string message = $"You have used {percentageUsed:F1}% of your AI credits ({credits.Used:N0} / {credits.Total:N0})";
+			
+			// Try to show system notification
+			if (OperatingSystem.IsWindows())
+			{
+				ShowWindowsNotification(title, message);
+			}
+			else if (OperatingSystem.IsMacOS())
+			{
+				ShowMacOSNotification(title, message);
+			}
+			else if (OperatingSystem.IsLinux())
+			{
+				ShowLinuxNotification(title, message);
+			}
+		}
+		catch (Exception ex)
+		{
+			// If notification fails, silently continue
+			Debug.WriteLine($"Failed to show notification: {ex.Message}");
+		}
+	}
+
+	private void ShowWindowsNotification(string title, string message)
+	{
+		try
+		{
+			// Use PowerShell to show Windows notification
+			string escapedTitle = title.Replace("\"", "\\\"").Replace("'", "''");
+			string escapedMessage = message.Replace("\"", "\\\"").Replace("'", "''");
+			
+			string xmlContent = $"<toast><visual><binding template='ToastText02'><text id='1'>{escapedTitle}</text><text id='2'>{escapedMessage}</text></binding></visual></toast>";
+			string psCommand = $"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications] > $null; " +
+				$"[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument] > $null; " +
+				$"$xml = New-Object Windows.Data.Xml.Dom.XmlDocument; " +
+				$"$xml.LoadXml('{xmlContent}'); " +
+				$"$toast = New-Object Windows.UI.Notifications.ToastNotification $xml; " +
+				$"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('CopilotCredits').Show($toast)";
+			
+			var process = new ProcessStartInfo
+			{
+				FileName = "powershell.exe",
+				Arguments = $"-NoProfile -Command \"{psCommand}\"",
+				UseShellExecute = false,
+				RedirectStandardOutput = true,
+				CreateNoWindow = true
+			};
+			
+			Process.Start(process);
+		}
+		catch
+		{
+			// Fallback: silently fail
+		}
+	}
+
+	private void ShowMacOSNotification(string title, string message)
+	{
+		try
+		{
+			// Use osascript for macOS notifications
+			string escapedMessage = message.Replace("\"", "\\\"");
+			string script = $"display notification \"{escapedMessage}\" with title \"{title}\"";
+			
+			var process = new ProcessStartInfo
+			{
+				FileName = "/usr/bin/osascript",
+				Arguments = $"-e '{script}'",
+				UseShellExecute = false,
+				RedirectStandardOutput = true,
+				CreateNoWindow = true
+			};
+			
+			Process.Start(process);
+		}
+		catch
+		{
+			// Fallback: silently fail
+		}
+	}
+
+	private void ShowLinuxNotification(string title, string message)
+	{
+		try
+		{
+			// Use notify-send for Linux
+			var process = new ProcessStartInfo
+			{
+				FileName = "notify-send",
+				Arguments = $"\"{title}\" \"{message}\"",
+				UseShellExecute = false,
+				RedirectStandardOutput = true,
+				CreateNoWindow = true
+			};
+			
+			Process.Start(process);
+		}
+		catch
+		{
+			// Fallback: silently fail
 		}
 	}
 }

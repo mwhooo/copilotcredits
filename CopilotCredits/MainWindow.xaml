@@ -5,6 +5,8 @@
         Icon="/Assets/icon.png"
         Width="280"
         Height="200"
+        MinWidth="280"
+        MinHeight="200"
         Background="#F4F7F7"
         Topmost="True">
         
