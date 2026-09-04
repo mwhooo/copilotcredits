@@ -12,12 +12,9 @@
         
     <Grid Margin="14">
         <Border Padding="20" Background="#FFFFFF" BorderBrush="#D6E1E2" BorderThickness="1" CornerRadius="8">
-            <Grid RowDefinitions="Auto,*">
-                <!-- Top Right Money Display -->
-                <TextBlock x:Name="MoneySpentText" Grid.Row="0" FontSize="13" FontWeight="SemiBold" Foreground="#D4563D" Text="€0.00" HorizontalAlignment="Right" Margin="0,0,0,8" />
-                
+            <Grid RowDefinitions="*,Auto">
                 <!-- Main Content (Centered) -->
-                <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="12">
+                <StackPanel Grid.Row="0" VerticalAlignment="Center" Spacing="12">
                     <!-- Label -->
                     <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#557178" Text="AI CREDITS" HorizontalAlignment="Center" />
                     
@@ -36,6 +33,12 @@
                     
                     <!-- Remaining Display -->
                     <TextBlock x:Name="RemainingText" FontSize="10" Foreground="#8A9FA5" Text="-- remaining" HorizontalAlignment="Center" />
+                </StackPanel>
+                
+                <!-- Bottom Left Money Display -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="4" Margin="0,12,0,0">
+                    <TextBlock FontSize="10" FontWeight="SemiBold" Foreground="#557178" Text="Spent:" />
+                    <TextBlock x:Name="MoneySpentText" FontSize="10" FontWeight="SemiBold" Foreground="#D4563D" Text="€0.00" />
                 </StackPanel>
             </Grid>
         </Border>
