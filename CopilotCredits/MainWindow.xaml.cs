@@ -128,41 +128,70 @@ public partial class MainWindow : Window
 	{
 		try
 		{
-			// Use native Windows.UI.Notifications API on Windows via reflection
-			// This gracefully handles non-Windows platforms where these types don't exist
-			var notificationManagerType = Type.GetType("Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications");
-			var xmlDocType = Type.GetType("Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument");
-			var toastNotificationType = Type.GetType("Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications");
-			
-			if (notificationManagerType == null || xmlDocType == null || toastNotificationType == null)
+			// Only try Windows notifications on Windows
+			if (!OperatingSystem.IsWindows())
 			{
-				Debug.WriteLine("Windows notification types not available on this platform");
 				return;
 			}
+
+			// Write PowerShell script to a temp file to avoid escaping headaches
+			string tempScript = Path.Combine(Path.GetTempPath(), $"notify_{Guid.NewGuid()}.ps1");
 			
-			// Build toast XML with HTML-encoded text
-			string escapedTitle = System.Net.WebUtility.HtmlEncode(title);
-			string escapedMessage = System.Net.WebUtility.HtmlEncode(message);
-			
-			string xmlContent = $@"<toast>
+			// Use @"..." for the here-string to avoid escaping issues
+			string scriptContent = @"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+[Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+
+$title = $args[0]
+$message = $args[1]
+
+$template = @""
+<toast>
     <visual>
         <binding template=""ToastText02"">
-            <text id=""1"">{escapedTitle}</text>
-            <text id=""2"">{escapedMessage}</text>
+            <text id=""1"">$title</text>
+            <text id=""2"">$message</text>
         </binding>
     </visual>
-</toast>";
+</toast>
+""@
+
+$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+$xml.LoadXml($template)
+$toast = New-Object Windows.UI.Notifications.ToastNotification $xml
+[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('CopilotCredits').Show($toast)
+";
 			
-			// Create XML document and load content using dynamic
-			dynamic xmlDoc = Activator.CreateInstance(xmlDocType)!;
-			xmlDoc.LoadXml(xmlContent);
+			File.WriteAllText(tempScript, scriptContent);
 			
-			// Create and show toast notification using dynamic
-			dynamic toast = Activator.CreateInstance(toastNotificationType, xmlDoc)!;
-			dynamic notifier = notificationManagerType.InvokeMember("CreateToastNotifier", System.Reflection.BindingFlags.InvokeMethod, null, null, new object[] { "CopilotCredits" })!;
-			notifier.Show(toast);
+			var process = new ProcessStartInfo
+			{
+				FileName = "powershell.exe",
+				Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{tempScript}\" -ArgumentList \"{title}\", \"{message}\"",
+				UseShellExecute = false,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+				CreateNoWindow = true
+			};
 			
-			Debug.WriteLine("Windows notification displayed successfully");
+			var proc = Process.Start(process);
+			if (proc != null)
+			{
+				proc.WaitForExit(5000);
+				string error = proc.StandardError.ReadToEnd();
+				if (!string.IsNullOrEmpty(error))
+				{
+					Debug.WriteLine($"PowerShell error: {error}");
+				}
+				else
+				{
+					Debug.WriteLine("Windows notification displayed successfully");
+				}
+				proc.Dispose();
+			}
+			
+			// Clean up
+			try { File.Delete(tempScript); } catch { }
 		}
 		catch (Exception ex)
 		{
