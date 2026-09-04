@@ -137,13 +137,17 @@ public partial class MainWindow : Window
 			// Write PowerShell script to a temp file to avoid escaping headaches
 			string tempScript = Path.Combine(Path.GetTempPath(), $"notify_{Guid.NewGuid()}.ps1");
 			
-			// Use @"..." for the here-string to avoid escaping issues
-			string scriptContent = @"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+			// Escape single quotes for PowerShell
+			string escapedTitle = title.Replace("'", "''");
+			string escapedMessage = message.Replace("'", "''");
+			
+			// Embed the values directly in the script to avoid argument passing issues
+			string scriptContent = $@"[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
 [Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
 [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
 
-$title = $args[0]
-$message = $args[1]
+$title = '{escapedTitle}'
+$message = '{escapedMessage}'
 
 $template = @""
 <toast>
@@ -167,7 +171,7 @@ $toast = New-Object Windows.UI.Notifications.ToastNotification $xml
 			var process = new ProcessStartInfo
 			{
 				FileName = "powershell.exe",
-				Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{tempScript}\" -ArgumentList \"{title}\", \"{message}\"",
+				Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{tempScript}\"",
 				UseShellExecute = false,
 				RedirectStandardOutput = true,
 				RedirectStandardError = true,
