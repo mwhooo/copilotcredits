@@ -126,17 +126,17 @@ public partial class MainWindow : Window
 
 	private void ShowWindowsNotification(string title, string message)
 	{
-#if WINDOWS
 		try
 		{
-			// Use native Windows.UI.Notifications API on Windows
-			dynamic? notificationManager = Type.GetType("Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications");
-			dynamic? xmlDocType = Type.GetType("Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument");
-			dynamic? toastNotificationType = Type.GetType("Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications");
+			// Use native Windows.UI.Notifications API on Windows via reflection
+			// This gracefully handles non-Windows platforms where these types don't exist
+			var notificationManagerType = Type.GetType("Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications");
+			var xmlDocType = Type.GetType("Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument");
+			var toastNotificationType = Type.GetType("Windows.UI.Notifications.ToastNotification, Windows.UI.Notifications");
 			
-			if (notificationManager == null || xmlDocType == null || toastNotificationType == null)
+			if (notificationManagerType == null || xmlDocType == null || toastNotificationType == null)
 			{
-				Debug.WriteLine("Could not load Windows notification types");
+				Debug.WriteLine("Windows notification types not available on this platform");
 				return;
 			}
 			
@@ -153,15 +153,13 @@ public partial class MainWindow : Window
     </visual>
 </toast>";
 			
-			// Create XML document
-			dynamic xmlDoc = Activator.CreateInstance(xmlDocType);
+			// Create XML document and load content using dynamic
+			dynamic xmlDoc = Activator.CreateInstance(xmlDocType)!;
 			xmlDoc.LoadXml(xmlContent);
 			
-			// Create toast notification
-			dynamic toast = Activator.CreateInstance(toastNotificationType, xmlDoc);
-			
-			// Show notification
-			dynamic notifier = notificationManager.CreateToastNotifier("CopilotCredits");
+			// Create and show toast notification using dynamic
+			dynamic toast = Activator.CreateInstance(toastNotificationType, xmlDoc)!;
+			dynamic notifier = notificationManagerType.InvokeMember("CreateToastNotifier", System.Reflection.BindingFlags.InvokeMethod, null, null, new object[] { "CopilotCredits" })!;
 			notifier.Show(toast);
 			
 			Debug.WriteLine("Windows notification displayed successfully");
@@ -170,7 +168,6 @@ public partial class MainWindow : Window
 		{
 			Debug.WriteLine($"ShowWindowsNotification exception: {ex.Message}");
 		}
-#endif
 	}
 
 	private void ShowMacOSNotification(string title, string message)
