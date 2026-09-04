@@ -45,11 +45,36 @@ public partial class MainWindow : Window
 			var credits = await creditReader.ReadUsedCreditsAsync();
 			UsedCreditsText.Text = credits.Used.ToString("N0");
 			TotalCreditsText.Text = credits.Total.ToString("N0");
+			
+			// Calculate percentage
+			double percentageUsed = credits.Total > 0 ? (double)credits.Used / credits.Total * 100 : 0;
+			double percentageRemaining = 100 - percentageUsed;
+			
+			UsageProgressBar.Value = percentageUsed;
+			PercentageText.Text = $"{percentageUsed:F1}%";
+			RemainingText.Text = $"{credits.Total - credits.Used:N0} remaining";
+			
+			// Change color based on usage
+			if (percentageUsed > 80)
+			{
+				UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Red);
+			}
+			else if (percentageUsed > 50)
+			{
+				UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Orange);
+			}
+			else
+			{
+				UsageProgressBar.Foreground = new Avalonia.Media.SolidColorBrush(new Avalonia.Media.Color(255, 212, 86, 61));
+			}
 		}
 		catch (Exception)
 		{
 			UsedCreditsText.Text = "--";
 			TotalCreditsText.Text = "--";
+			PercentageText.Text = "--";
+			RemainingText.Text = "-- remaining";
+			UsageProgressBar.Value = 0;
 		}
 		finally
 		{

@@ -3,21 +3,31 @@
         x:Class="CopilotCredits.MainWindow"
         Title="Copilot Credits"
         Icon="/Assets/icon.png"
-        Width="250"
-        Height="150"
+        Width="280"
+        Height="200"
         Background="#F4F7F7"
         Topmost="True">
         
     <Grid Margin="14">
-        <Border Padding="22" Background="#FFFFFF" BorderBrush="#D6E1E2" BorderThickness="1" CornerRadius="8">
-            <StackPanel VerticalAlignment="Center">
+        <Border Padding="20" Background="#FFFFFF" BorderBrush="#D6E1E2" BorderThickness="1" CornerRadius="8">
+            <StackPanel VerticalAlignment="Center" Spacing="12">
+                <!-- Credits Display -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock x:Name="UsedCreditsText" FontSize="16" FontWeight="SemiBold" Foreground="#D4563D" Text="--" />
-                    <TextBlock Margin="4,0,0,0" FontSize="16" FontWeight="SemiBold" Foreground="#557178" Text="/" />
-                    <TextBlock x:Name="TotalCreditsText" Margin="4,0,0,0" FontSize="16" FontWeight="SemiBold" Foreground="#557178" Text="--" />
+                    <TextBlock x:Name="UsedCreditsText" FontSize="18" FontWeight="SemiBold" Foreground="#D4563D" Text="--" />
+                    <TextBlock Margin="6,0,0,0" FontSize="18" FontWeight="SemiBold" Foreground="#557178" Text="/" />
+                    <TextBlock x:Name="TotalCreditsText" Margin="6,0,0,0" FontSize="18" FontWeight="SemiBold" Foreground="#557178" Text="--" />
                 </StackPanel>
                 
-                <TextBlock Margin="0,6,0,0" FontSize="12" FontWeight="SemiBold" Foreground="#557178" Text="AI CREDITS" HorizontalAlignment="Center" />
+                <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#557178" Text="AI CREDITS" HorizontalAlignment="Center" />
+                
+                <!-- Percentage Display -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                    <ProgressBar x:Name="UsageProgressBar" Width="140" Height="12" Minimum="0" Maximum="100" CornerRadius="6" Background="#E8F0F1" Foreground="#D4563D" />
+                    <TextBlock x:Name="PercentageText" FontSize="12" FontWeight="Bold" Foreground="#D4563D" Text="--" />
+                </StackPanel>
+                
+                <!-- Remaining Display -->
+                <TextBlock x:Name="RemainingText" FontSize="10" Foreground="#8A9FA5" Text="-- remaining" HorizontalAlignment="Center" />
             </StackPanel>
         </Border>
     </Grid>
