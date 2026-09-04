@@ -42,12 +42,14 @@ public partial class MainWindow : Window
 
 		try
 		{
-			int usedCredits = await creditReader.ReadUsedCreditsAsync();
-			UsedCreditsText.Text = usedCredits.ToString("N0");
+			var credits = await creditReader.ReadUsedCreditsAsync();
+			UsedCreditsText.Text = credits.Used.ToString("N0");
+			TotalCreditsText.Text = credits.Total.ToString("N0");
 		}
 		catch (Exception)
 		{
 			UsedCreditsText.Text = "--";
+			TotalCreditsText.Text = "--";
 		}
 		finally
 		{

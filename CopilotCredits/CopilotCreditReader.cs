@@ -4,6 +4,8 @@ using Microsoft.Playwright;
 
 namespace CopilotCredits;
 
+public sealed record CreditInfo(int Used, int Total);
+
 public sealed class CopilotCreditReader
 {
 	private const string CopilotFeaturesUrl = "https://github.com/settings/copilot/features";
@@ -16,20 +18,20 @@ public sealed class CopilotCreditReader
 		"CopilotCredits",
 		"browser-profile");
 
-	public async Task<int> ReadUsedCreditsAsync()
+	public async Task<CreditInfo> ReadUsedCreditsAsync()
 	{
-		int? usedCredits = await TryReadUsedCreditsAsync(true, HeadlessTimeoutMilliseconds);
+		CreditInfo? credits = await TryReadUsedCreditsAsync(true, HeadlessTimeoutMilliseconds);
 
-		if (usedCredits is not null)
+		if (credits is not null)
 		{
-			return usedCredits.Value;
+			return credits;
 		}
 
-		usedCredits = await TryReadUsedCreditsAsync(false, SignInTimeoutMilliseconds);
-		return usedCredits ?? throw new InvalidOperationException("Sign in to GitHub in the opened browser.");
+		credits = await TryReadUsedCreditsAsync(false, SignInTimeoutMilliseconds);
+		return credits ?? throw new InvalidOperationException("Sign in to GitHub in the opened browser.");
 	}
 
-	private async Task<int?> TryReadUsedCreditsAsync(bool headless, float timeoutMilliseconds)
+	private async Task<CreditInfo?> TryReadUsedCreditsAsync(bool headless, float timeoutMilliseconds)
 	{
 		using IPlaywright playwright = await Playwright.CreateAsync();
 		await using IBrowserContext context = await playwright.Chromium.LaunchPersistentContextAsync(
@@ -51,8 +53,12 @@ public sealed class CopilotCreditReader
 		}
 
 		Match creditMatch = Regex.Match(await creditMeter.InnerTextAsync(), CreditPattern, RegexOptions.IgnoreCase);
-		return creditMatch.Success
-			? int.Parse(creditMatch.Groups["used"].Value.Replace(",", ""))
-			: null;
+		if (creditMatch.Success)
+		{
+			int used = int.Parse(creditMatch.Groups["used"].Value.Replace(",", ""));
+			int total = int.Parse(creditMatch.Groups["total"].Value.Replace(",", ""));
+			return new CreditInfo(used, total);
+		}
+		return null;
 	}
 }
