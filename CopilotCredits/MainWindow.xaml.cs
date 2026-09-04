@@ -54,9 +54,13 @@ public partial class MainWindow : Window
 			double percentageUsed = credits.Total > 0 ? (double)credits.Used / credits.Total * 100 : 0;
 			double percentageRemaining = 100 - percentageUsed;
 			
+			// Calculate money spent (1 credit = 0.01 euro)
+			double moneySpent = credits.Used * 0.01;
+			
 			UsageProgressBar.Value = percentageUsed;
 			PercentageText.Text = $"{percentageUsed:F1}%";
 			RemainingText.Text = $"{credits.Total - credits.Used:N0} remaining";
+			MoneySpentText.Text = $"€{moneySpent:F2}";
 			
 			// Change color based on usage
 			if (percentageUsed > 80)
@@ -88,6 +92,7 @@ public partial class MainWindow : Window
 			TotalCreditsText.Text = "--";
 			PercentageText.Text = "--";
 			RemainingText.Text = "-- remaining";
+			MoneySpentText.Text = "€0.00";
 			UsageProgressBar.Value = 0;
 		}
 		finally

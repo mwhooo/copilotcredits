@@ -12,26 +12,32 @@
         
     <Grid Margin="14">
         <Border Padding="20" Background="#FFFFFF" BorderBrush="#D6E1E2" BorderThickness="1" CornerRadius="8">
-            <StackPanel VerticalAlignment="Center" Spacing="12">
-                <!-- Label -->
-                <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#557178" Text="AI CREDITS" HorizontalAlignment="Center" />
+            <Grid RowDefinitions="Auto,*">
+                <!-- Top Right Money Display -->
+                <TextBlock x:Name="MoneySpentText" Grid.Row="0" FontSize="13" FontWeight="SemiBold" Foreground="#D4563D" Text="€0.00" HorizontalAlignment="Right" Margin="0,0,0,8" />
                 
-                <!-- Credits Display -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock x:Name="UsedCreditsText" FontSize="18" FontWeight="SemiBold" Foreground="#D4563D" Text="--" />
-                    <TextBlock Margin="6,0,0,0" FontSize="18" FontWeight="SemiBold" Foreground="#557178" Text="/" />
-                    <TextBlock x:Name="TotalCreditsText" Margin="6,0,0,0" FontSize="18" FontWeight="SemiBold" Foreground="#557178" Text="--" />
+                <!-- Main Content (Centered) -->
+                <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="12">
+                    <!-- Label -->
+                    <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#557178" Text="AI CREDITS" HorizontalAlignment="Center" />
+                    
+                    <!-- Credits Display -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock x:Name="UsedCreditsText" FontSize="18" FontWeight="SemiBold" Foreground="#D4563D" Text="--" />
+                        <TextBlock Margin="6,0,0,0" FontSize="18" FontWeight="SemiBold" Foreground="#557178" Text="/" />
+                        <TextBlock x:Name="TotalCreditsText" Margin="6,0,0,0" FontSize="18" FontWeight="SemiBold" Foreground="#557178" Text="--" />
+                    </StackPanel>
+                    
+                    <!-- Percentage Display -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                        <ProgressBar x:Name="UsageProgressBar" Width="140" Height="12" Minimum="0" Maximum="100" CornerRadius="6" Background="#E8F0F1" Foreground="#D4563D" />
+                        <TextBlock x:Name="PercentageText" FontSize="12" FontWeight="Bold" Foreground="#D4563D" Text="--" />
+                    </StackPanel>
+                    
+                    <!-- Remaining Display -->
+                    <TextBlock x:Name="RemainingText" FontSize="10" Foreground="#8A9FA5" Text="-- remaining" HorizontalAlignment="Center" />
                 </StackPanel>
-                
-                <!-- Percentage Display -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
-                    <ProgressBar x:Name="UsageProgressBar" Width="140" Height="12" Minimum="0" Maximum="100" CornerRadius="6" Background="#E8F0F1" Foreground="#D4563D" />
-                    <TextBlock x:Name="PercentageText" FontSize="12" FontWeight="Bold" Foreground="#D4563D" Text="--" />
-                </StackPanel>
-                
-                <!-- Remaining Display -->
-                <TextBlock x:Name="RemainingText" FontSize="10" Foreground="#8A9FA5" Text="-- remaining" HorizontalAlignment="Center" />
-            </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </Window>
