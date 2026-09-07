@@ -55,6 +55,7 @@ public partial class MainWindow : Window
 			// Marshal UI updates back to the UI thread
 			await Dispatcher.UIThread.InvokeAsync(() =>
 			{
+				ErrorText.IsVisible = false;
 				UsedCreditsText.Text = credits.Used.ToString("N0");
 				TotalCreditsText.Text = credits.Total.ToString("N0");
 				
@@ -115,8 +116,10 @@ public partial class MainWindow : Window
 				}
 			});
 		}
-		catch (Exception)
+		catch (Exception exception)
 		{
+			Debug.WriteLine($"Failed to load Copilot credits: {exception}");
+
 			// Marshal error UI updates back to the UI thread
 			await Dispatcher.UIThread.InvokeAsync(() =>
 			{
@@ -126,6 +129,8 @@ public partial class MainWindow : Window
 				RemainingText.Text = "-- remaining";
 				MoneySpentText.Text = "€0.00";
 				UsageProgressBar.Value = 0;
+				ErrorText.Text = "Unable to load credits. Check Chromium setup and GitHub sign-in.";
+				ErrorText.IsVisible = true;
 				
 				if (this.FindControl<TextBlock>("CarbonText") is TextBlock carbonText)
 				{

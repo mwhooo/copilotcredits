@@ -17,6 +17,7 @@ public sealed class CopilotCreditReader
 		Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
 		"CopilotCredits",
 		"browser-profile");
+	private bool chromiumInstallChecked;
 
 	public async Task<CreditInfo> ReadUsedCreditsAsync()
 	{
@@ -34,6 +35,7 @@ public sealed class CopilotCreditReader
 	private async Task<CreditInfo?> TryReadUsedCreditsAsync(bool headless, float timeoutMilliseconds)
 	{
 		using IPlaywright playwright = await Playwright.CreateAsync();
+		await EnsureChromiumInstalledAsync(playwright);
 		await using IBrowserContext context = await playwright.Chromium.LaunchPersistentContextAsync(
 			profileDirectory,
 			new BrowserTypeLaunchPersistentContextOptions { Headless = headless });
@@ -60,5 +62,23 @@ public sealed class CopilotCreditReader
 			return new CreditInfo(used, total);
 		}
 		return null;
+	}
+
+	private async Task EnsureChromiumInstalledAsync(IPlaywright playwright)
+	{
+		if (chromiumInstallChecked || File.Exists(playwright.Chromium.ExecutablePath))
+		{
+			chromiumInstallChecked = true;
+			return;
+		}
+
+		int exitCode = await Task.Run(() => Microsoft.Playwright.Program.Main(new[] { "install", "chromium" }));
+		if (exitCode != 0 || !File.Exists(playwright.Chromium.ExecutablePath))
+		{
+			throw new InvalidOperationException(
+				"Chromium could not be installed. Run 'dotnet run' again with an internet connection.");
+		}
+
+		chromiumInstallChecked = true;
 	}
 }

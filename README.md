@@ -1,5 +1,7 @@
 # Copilot Credits
 
+![Copilot Credits application window](Assets/app-screenshot.png)
+
 A lightweight cross-platform desktop application that displays your used GitHub Copilot AI credits, automatically refreshing from your GitHub Copilot settings.
 
 ## ✅ Platform Support
@@ -12,18 +14,18 @@ A lightweight cross-platform desktop application that displays your used GitHub 
 
 - **[.NET 10.0 SDK](https://dotnet.microsoft.com/en-us/download)** - Required to build and run the app (Windows, macOS, Linux)
 - **GitHub account** - With Copilot subscription
-- **Chromium browser** (installed automatically via setup below)
+- **Internet connection on first run** (the app downloads its Playwright Chromium browser automatically)
 
 ## Setup (First Time Only)
 
 1. **Clone/download the repository** and navigate to the project directory
 
-2. **Install Playwright Chromium browser:**
+2. **Run the app:**
    ```bash
    dotnet run
    ```
    
-   The app will automatically download and install Chromium on first run (approximately 300MB).
+   The app automatically downloads and installs the Playwright Chromium browser on first run (approximately 300MB).
 
 ## Linux Setup
 
@@ -40,7 +42,7 @@ The app's UI renders natively (via Avalonia), but the underlying data is scraped
    ```
    To make this permanent, add the line above to your `~/.bashrc` (or `~/.zshrc`).
 
-3. **Install the Chromium browser:**
+3. **Install the Chromium browser** (the app does this automatically on first run, but you can install it explicitly):
    ```bash
    playwright install chromium
    ```
@@ -59,7 +61,7 @@ The app's UI renders natively (via Avalonia), but the underlying data is scraped
    dotnet run --project .\CopilotCredits.csproj
    ```
 
-> **Note:** On first launch the app may open a visible browser window so you can sign in to GitHub once. After that it runs headlessly using the cached session. If you run the app and it displays `--` instead of your credit values, Chromium (or its dependencies) is likely missing — run steps 3 and 4 above.
+> **Note:** On first launch the app downloads Chromium if needed and may open a visible browser window so you can sign in to GitHub once. After that it runs headlessly using the cached session. If it displays `--`, check the error message in the app and the terminal output for browser or sign-in details.
 
 ## Run
 
@@ -90,7 +92,7 @@ Your GitHub browser session is stored locally at:
 
 | Issue | Solution |
 |-------|----------|
-| "Chromium not found" error | The app will automatically install it on first run. Ensure you have ~300MB disk space |
+| "Chromium not found" error | Run `dotnet run` with an internet connection. The app installs Chromium automatically; ensure you have ~300MB disk space |
 | App shows `--` for credits on Linux | Chromium is missing. Install it: `dotnet tool install --global Microsoft.Playwright.CLI`, then `playwright install chromium` and `playwright install-deps chromium` (see [Linux Setup](#linux-setup)) |
 | Browser window opens repeatedly | Sign in to GitHub when prompted. Your session will be cached for future runs |
 | Credits won't load | Ensure your GitHub Copilot subscription is active and you're signed into GitHub |

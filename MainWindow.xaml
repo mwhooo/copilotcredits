@@ -4,7 +4,7 @@
         Title="Copilot Credits"
         Icon="/Assets/icon.png"
         Width="290"
-        Height="200"
+        Height="220"
         MinWidth="290"
         MinHeight="200"
         Background="#F4F7F7"
@@ -33,6 +33,7 @@
                     
                     <!-- Remaining Display -->
                     <TextBlock x:Name="RemainingText" FontSize="10" Foreground="#8A9FA5" Text="-- remaining" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="ErrorText" FontSize="9" Foreground="#B44A3A" TextWrapping="Wrap" TextAlignment="Center" IsVisible="False" />
                 </StackPanel>
                 
                 <!-- Bottom Section: Money and Carbon -->
